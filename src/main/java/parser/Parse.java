@@ -77,7 +77,8 @@ public class Parse {
 			// this class is XmlEnum
 			XmlEnum xmlEnum = (XmlEnum) c.getAnnotation(XmlEnum.class);
 			if (xmlEnum != null) {
-				this.loader.getEnumClassTable().add(Util.genGoStructName(cls, this.pkg));
+			    String name = Util.genGoStructName(cls, this.pkg);
+			    this.loader.getEnumClassTable().add(name);
 			}
 		}
 	}
@@ -237,6 +238,15 @@ public class Parse {
 		return structName;
 	}
 
+
+    private String getGoType(String type) {
+	if (this.loader.getEnumClassTable().contains(type)) {
+	    return "string";
+	} else {
+	    return this.typeConvertor.getGoType(type);
+	}
+    }
+
 	/**
 	 * parse XmlAttribute field
 	 * 
@@ -252,7 +262,7 @@ public class Parse {
 
 		// attribute type
 		String type = f.getType().getName();
-		String goType = this.typeConvertor.getGoType(type);
+		String goType = getGoType(type);
 		if (goType == null) {
 			System.err.println("Can not map to Golang type: " + type);
 			System.exit(1);

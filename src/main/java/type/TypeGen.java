@@ -52,7 +52,7 @@ public class TypeGen {
 			ParameterizedType param = (ParameterizedType) field.getGenericType();
 
 			if (!field.getType().getName().equals("java.util.List")) {
-				System.err.println("can not map to Go type : " + field.getType());
+				System.err.println("can not map to Go A type : " + field.getType());
 				System.exit(0);
 			}
 
@@ -66,7 +66,7 @@ public class TypeGen {
 
 			String goType = this.typeConvertor.getGoType(pClass.getName());
 			if (goType == null) {
-				System.err.println("can not map to Go type : " + pClass.getName());
+				System.err.println("can not map to Go B type : " + pClass.getName());
 				System.exit(0);
 			}
 
@@ -81,9 +81,13 @@ public class TypeGen {
 
 		// Field is Struct
 		String goType = field.getType().getName();
+		//System.out.println("JJJ: " + goType);
+		if (isEnumClass(field.getType())) {
+		    return "string";
+		}
 		goType = this.typeConvertor.getGoType(goType);
 		if (goType == null) {
-			System.err.println("can not map to Go type : " + goType);
+			System.err.println("can not map to Go C type : " + goType + ", field name: "+field.getName());
 			System.exit(0);
 		}
 

@@ -75,6 +75,9 @@ public class Util {
 		if (r.contains("$")) {
 			r = r.replaceAll("\\$", "");
 		}
+		if (r.contains("-")) {
+			r = r.replaceAll("-", "");
+		}
 		return r;
 	}
 	

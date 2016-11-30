@@ -21,10 +21,11 @@ public class TypeConvertor {
 		TYPE_MAP.put("java.lang.Long", "int64"); // -2^63 ~ 2^63-1
 		TYPE_MAP.put("java.lang.Short", "int16"); // -2^15 ~ 2^15-1
 		TYPE_MAP.put("java.lang.String", "string"); // builtin type
+		TYPE_MAP.put("[B", "[]byte"); // builtin type
 		
 		TYPE_MAP.put("java.math.BigInteger", "string"); // stored as string, big.Int
 		TYPE_MAP.put("java.math.BigDecimal", "string"); // stored as string, big.Rat
-
+		TYPE_MAP.put("javax.xml.datatype.XMLGregorianCalendar", "string"); // stored as string, XMLGregorian
 		TYPE_MAP.put("byte", "int8");
 		TYPE_MAP.put("short", "int16");
 		TYPE_MAP.put("int", "int32");
