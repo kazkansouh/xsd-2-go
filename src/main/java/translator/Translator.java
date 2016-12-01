@@ -8,16 +8,14 @@ import loader.Loader;
 public class Translator {
 	
 	String classDir;
-	String classPkg;
 	
 	Loader loader;
 	Parse parser;
 	
-	public Translator(String dir, String pkg) {
+	public Translator(String dir) {
 		this.classDir = dir;
-		this.classPkg = pkg;
 		this.loader = new Loader(this.classDir);
-		this.parser = new Parse(this.loader, this.classPkg);
+		this.parser = new Parse(this.loader);
 		this.parser.init();
 	}
 	

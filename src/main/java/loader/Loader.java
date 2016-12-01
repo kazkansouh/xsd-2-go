@@ -22,7 +22,7 @@ public class Loader {
 		File file = new File(folder);
 
 		File packageDir = new File(file.getAbsolutePath());
-		this.buildClassNameTable(packageDir);
+		this.buildClassNameTable("",packageDir);
 
 		try {
 			URL url = file.toURI().toURL();
@@ -41,31 +41,43 @@ public class Loader {
 	 * 
 	 * @param dir
 	 */
-	private void buildClassNameTable(File dir) {
+	private void buildClassNameTable(String prefix, File dir) {
 		FilenameFilter classFilter = new FilenameFilter() {
 			public boolean accept(File dir, String name) {
-				String lowercaseName = name.toLowerCase();
-				if (lowercaseName.endsWith(".class")) {
+				if (new File(dir + "/" + name).isDirectory()) {
 					return true;
 				} else {
-					return false;
+					String lowercaseName = name.toLowerCase();
+					if (lowercaseName.endsWith(".class")) {
+						return true;
+					} else {
+						return false;
+					}
 				}
 			}
 		};
 
-		String[] clsNames = dir.list(classFilter);
-		for (String c : clsNames) {
-			if (c.endsWith(".class")) {
-				c = c.substring(0, c.length() - 6);
+		File[] clsNames = dir.listFiles(classFilter);
+		for (File f : clsNames) {
+			if (f.isDirectory()) {
+				if (prefix.equals("")) {
+					buildClassNameTable(f.getName(), f);
+				} else {
+					buildClassNameTable(prefix + "." + f.getName(), f);
+				}
+			} else {
+				String c = prefix + "." + f.getName();
+				if (c.endsWith(".class")) {
+					c = c.substring(0, c.length() - 6);
+				} else {
+					System.out.println("ERROR: " + f);
+				}
+				this.classFullNameTable.add(c);
+				if (c.contains("$")) {
+					c = c.replaceAll("\\$", "");
+				}
+				this.classNameTable.add(c.replaceAll("\\.",""));
 			}
-
-			this.classFullNameTable.add(c);
-
-			if (c.contains("$")) {
-				c = c.replaceAll("\\$", "");
-			}
-
-			this.classNameTable.add(c);
 		}
 	}
 

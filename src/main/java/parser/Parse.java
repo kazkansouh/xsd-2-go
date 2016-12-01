@@ -8,6 +8,9 @@ import java.util.Set;
 import javax.xml.bind.annotation.*;
 import javax.xml.bind.JAXBElement;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jaxb.JaxbContext;
 import jaxb.JaxbFactory;
 import symbol.GoField;
@@ -21,36 +24,37 @@ import loader.Loader;
 
 public class Parse {
 
-	String pkg;
 	Loader loader;
 	TypeConvertor typeConvertor;
 	TypeGen typeGen;
-	JaxbFactory jaxbFactory;
+	List<JaxbFactory> jaxbFactories = new ArrayList<JaxbFactory>();
 	StringBuilder buffer;
 	SymbolTable symbolTable;
 
 	int level = 0;
 	boolean verbose = false;
 
-	public Parse(Loader ld, String pkg) {
+	public Parse(Loader ld) {
 		this.loader = ld;
-		this.pkg = pkg;
 		this.buffer = new StringBuilder();
 		this.symbolTable = new SymbolTable();
 	}
 
 	public void init() {
 		this.typeConvertor = new TypeConvertor();
-		this.typeConvertor.setPackageName(this.pkg);
 		this.typeConvertor.setClassNameTable(this.loader.getClassNameTable());
 
 		this.typeGen = new TypeGen();
-		this.typeGen.setPkg(this.pkg);
 		this.typeGen.setTypeConv(this.typeConvertor);
 
 		try {
-			Class factory = this.loader.load(this.pkg+".ObjectFactory");
-			this.jaxbFactory = new JaxbFactory(factory);
+		    
+		    for (String classname : this.loader.getClassFullNameTable()) {
+			if (classname.endsWith("ObjectFactory")) {
+			    Class factory = this.loader.load(classname);
+			    this.jaxbFactories.add(new JaxbFactory(factory));
+			}
+		    }
 
 			this.findEnumClass();
 
@@ -72,12 +76,12 @@ public class Parse {
 	private void findEnumClass() throws ClassNotFoundException {
 
 		for (String cls : this.loader.getClassFullNameTable()) {
-			Class c = this.loader.load(this.pkg + "." + cls);
+			Class c = this.loader.load(cls);
 
 			// this class is XmlEnum
 			XmlEnum xmlEnum = (XmlEnum) c.getAnnotation(XmlEnum.class);
 			if (xmlEnum != null) {
-			    String name = Util.genGoStructName(cls, this.pkg);
+			    String name = Util.genGoStructName(cls);
 			    this.loader.getEnumClassTable().add(name);
 			}
 		}
@@ -108,12 +112,12 @@ public class Parse {
 	 * @return
 	 */
 	public boolean preprocess(Class cls) {
-		String structName = Util.genGoStructName(cls.getName(), this.pkg);
+		String structName = Util.genGoStructName(cls.getName());
 		if (this.loader.getEnumClassTable().contains(structName)) {
 			return false;
 		}
 
-		if (structName.equals("ObjectFactory")) {
+		if (structName.endsWith("ObjectFactory")) {
 			return false;
 		}
 
@@ -200,7 +204,7 @@ public class Parse {
 	 */
 	public String parseStructName(Class cls) {
 		// Struct name
-		String structName = Util.genGoStructName(cls.getName(), this.pkg);
+		String structName = Util.genGoStructName(cls.getName());
 		this.println("struct name: " + "XML" + structName);
 
 		this.buffer.append(Util.formatGoStructHeader("XML" + structName));
@@ -220,14 +224,6 @@ public class Parse {
 	}
 
 
-    private String getGoType(String type) {
-	if (this.loader.getEnumClassTable().contains(type)) {
-	    return "string";
-	} else {
-	    return this.typeConvertor.getGoType(type);
-	}
-    }
-
 	/**
 	 * parse XmlAttribute field
 	 * 
@@ -243,7 +239,7 @@ public class Parse {
 
 		// attribute type
 		String type = f.getType().getName();
-		String goType = getGoType(type);
+		String goType = this.typeConvertor.getGoType(type);
 		if (goType == null) {
 			System.err.println("Can not map to Golang type: " + type);
 			System.exit(1);
@@ -313,7 +309,7 @@ public class Parse {
 			String goName = Util.genGoField(element.name(), true);
 
 			// element type
-			String goType = this.typeGen.typeOf(element, this.jaxbFactory);
+			String goType = this.typeGen.typeOf(element, this.jaxbFactories);
 
 			// element tag
 			String goTag = Util.genXmlTag(element.name(), false);
@@ -351,7 +347,7 @@ public class Parse {
 			String goTag = Util.genXmlTag(ref.name(), false);
 
 			// ref type
-			String goType = this.typeGen.typeOf(ref, ctx, this.jaxbFactory);
+			String goType = this.typeGen.typeOf(ref, ctx, this.jaxbFactories);
 
 			// node info
 			JavaField j = JavaField.genJavaField(null, ref.type());

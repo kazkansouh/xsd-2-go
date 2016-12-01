@@ -66,17 +66,16 @@ public class Util {
 	 * @param pkg
 	 * @return
 	 */
-	public static String genGoStructName(String name, String pkg) {
+	public static String genGoStructName(String name) {
 		String r = name;
-		String prefix = pkg + ".";
-		if (r.startsWith(pkg)) {
-			r = r.replace(prefix, "");
-		}
 		if (r.contains("$")) {
 			r = r.replaceAll("\\$", "");
 		}
 		if (r.contains("-")) {
 			r = r.replaceAll("-", "");
+		}
+		if (r.contains(".")) {
+			r = r.replaceAll("\\.", "");
 		}
 		return r;
 	}

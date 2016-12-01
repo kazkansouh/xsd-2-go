@@ -36,7 +36,6 @@ public class TypeConvertor {
 		TYPE_MAP.put("char", "uint16");
 	}
 
-	String packageName;
 	Set<String> classNameTable;
 	
 	public boolean isPrimitive(String t) {
@@ -61,26 +60,15 @@ public class TypeConvertor {
 		if (classNameTable.contains(goType)) {
 			return goType;
 		}
-		
+
 		return null;
 	}
 
 	String removePkg(String t) {
-		String prefix = this.packageName + ".";
-		return t.startsWith(prefix) ?
-				t.replaceFirst(prefix, "") :
-				t;
+		return t.replaceAll("\\.", "");
 	}
 
 	public void setClassNameTable(Set<String> t) {
 		this.classNameTable = t;
-	}
-
-	public String getPackageName() {
-		return packageName;
-	}
-
-	public void setPackageName(String pkg) {
-		this.packageName = pkg;
 	}
 }

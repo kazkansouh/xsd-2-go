@@ -8,26 +8,38 @@ import translator.Translator;
 
 public class Start {
 
-	public void run(String folder, String pkg) throws ClassNotFoundException {
-		Translator t = new Translator(folder, pkg);
+	public void run_aux(Translator t, File folder, String pkg) throws ClassNotFoundException {
+	    File[] files = folder.listFiles();
+	    for (File f : files) {
+		if (f.isDirectory()) {
+		    if (pkg.equals("")) {
+			run_aux(t, f, f.getName());
+		    } else {
+			run_aux(t, f, pkg + "." + f.getName());
+		    }
+		} else {
+		    if (f.getName().endsWith(".class")) {
+			String fname = f.getName().replaceAll("\\.class", "");
+			String src = t.go(pkg + "." + fname);
+			System.out.println(src);
+		    }
+		}
+	    }
+	}
+
+	public void run(String folder) throws ClassNotFoundException {
+		Translator t = new Translator(folder);
 		File dir = new File(folder);
 
-		for (String fname : dir.list()) {
-			if (fname.endsWith(".class")) {
-				fname = fname.replaceAll("\\.class", "");
-				String src = t.go(pkg + "." + fname);
-				System.out.println(src);
-			}
-		}
+		run_aux(t, dir, "");
 	}
 
 	public static void main(String[] args) throws ClassNotFoundException, MalformedURLException {
 
 		String classDir = args[0];
-		String pkg = args[1];
 		
 		Start s = new Start();
-		s.run(classDir, pkg);
+		s.run(classDir);
 		
 	}
 
