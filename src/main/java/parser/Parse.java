@@ -197,14 +197,59 @@ public class Parse {
 		this.symbolTable.addNode(node);
 	}
 
+
+	public String findNamespace(Class cls) {
+	    Package pkginfo = cls.getPackage();
+	    Annotation a = pkginfo.getAnnotation(XmlSchema.class);
+	    if (a != null) {
+		XmlSchema xmlSchema = (XmlSchema)a;
+		return xmlSchema.namespace() + " ";
+	    } else {
+		System.err.println("ERR: not find annotation XmlSchema");
+	    }
+	    
+	    System.exit(1);
+	    return "";
+	}
+
+
+	public String findNamespace(Field f) {
+	    Annotation a = f.getAnnotation(XmlElement.class);
+	    if (a != null) {
+		XmlElement xmlElement = (XmlElement)a;
+		if (!xmlElement.namespace().startsWith("##")) {
+		    return xmlElement.namespace() + " ";
+		}
+	    }
+	    return findNamespace(f.getDeclaringClass());
+	}
+
 	/**
 	 * Parse struct name & xml name
 	 * 
 	 * @param cls
 	 */
 	public String parseStructName(Class cls) {
-		// Struct name
+		// create wrapping struct (if not root)
+		Annotation annotation = cls.getAnnotation(XmlRootElement.class);
 		String structName = Util.genGoStructName(cls.getName());
+		if (annotation == null) {
+		    annotation = cls.getAnnotation(XmlType.class);
+		    if (annotation != null) {
+			XmlType xmlType = (XmlType) annotation;
+			if (!xmlType.name().equals("")) {
+			    this.println("struct name: " + "EXML" + structName);
+			    this.buffer.append(Util.formatGoStructHeader("EXML" + structName));
+			    String xmlName = findNamespace(cls) + xmlType.name();
+			    this.println("\t" + "XMLName xml.Name " + Util.genXmlTag(xmlName, true));
+			    this.buffer.append(Util.formatGoXMLNameField(Util.genXmlTag(xmlName, true)));
+			    this.buffer.append("\t" + "XML" + structName + "\n");
+			    this.buffer.append(Util.formatGoStructFooter());
+			}
+		    }
+		}
+
+		// Struct name
 		this.println("struct name: " + "XML" + structName);
 
 		this.buffer.append(Util.formatGoStructHeader("XML" + structName));
@@ -212,10 +257,10 @@ public class Parse {
 		this.symbolTable.setGOStructName(structName);
 
 		// XMLName
-		Annotation annotation = cls.getAnnotation(XmlRootElement.class);
+		annotation = cls.getAnnotation(XmlRootElement.class);
 		if (annotation != null) {
 			XmlRootElement xmlRootElement = (XmlRootElement) annotation;
-			String xmlName = xmlRootElement.name();
+			String xmlName = findNamespace(cls) + xmlRootElement.name();
 			this.println("\t" + "XMLName xml.Name " + Util.genXmlTag(xmlName, true));
 			this.buffer.append(Util.formatGoXMLNameField(Util.genXmlTag(xmlName, true)));
 		}
@@ -276,10 +321,10 @@ public class Parse {
 		XmlElement elementAnn = f.getAnnotation(XmlElement.class);
 
 		if (elementAnn == null) {
-			goTag = Util.genXmlTag(f.getName(), false);
+			goTag = Util.genXmlTag(findNamespace(f) + f.getName(), false);
 		} else {
 			String tag = elementAnn.name() == null | elementAnn.name().equals("##default") ? f.getName() : elementAnn.name();
-			goTag = Util.genXmlTag(tag, elementAnn.required());
+			goTag = Util.genXmlTag(findNamespace(f) + tag, elementAnn.required());
 		}
 
 		this.print("\t" + goFieldName + "\t" + goType + "\t" + goTag + "\n");
@@ -312,7 +357,7 @@ public class Parse {
 			String goType = this.typeGen.typeOf(element, this.jaxbFactories);
 
 			// element tag
-			String goTag = Util.genXmlTag(element.name(), false);
+			String goTag = Util.genXmlTag(findNamespace(field) + element.name(), false);
 
 			this.print("\t" + goName + "\t" + goType + "\t" + goTag + "\n");
 
@@ -344,7 +389,7 @@ public class Parse {
 			String goName = Util.genGoField(ref.name(), true);
 
 			// ref tag
-			String goTag = Util.genXmlTag(ref.name(), false);
+			String goTag = Util.genXmlTag(findNamespace(field) + ref.name(), false);
 
 			// ref type
 			String goType = this.typeGen.typeOf(ref, ctx, this.jaxbFactories);
